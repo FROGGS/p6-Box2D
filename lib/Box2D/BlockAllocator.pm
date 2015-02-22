@@ -18,7 +18,7 @@ class Box2D::Chunk is repr<CStruct> {
 #| This is a small object allocator used for allocating small
 #| objects that persist for more than one time step.
 #| See: http://www.codeproject.com/useritems/Small_Block_Allocator.asp
-class Box2D::BlockAllocator is repr<CPPStruct> is export { # _ZN16b2BlockAllocator8AllocateEi
+class Box2D::BlockAllocator is repr<CPPStruct> is export {
 #~ public:
 
     #| Allocate memory. This will use b2Alloc if the size is larger than b2_maxBlockSize.
