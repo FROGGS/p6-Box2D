@@ -13,6 +13,8 @@ use v6;
 #     |  nvsize=32, nvalign=4]
 
 class Box2D::Profile is repr<CStruct> is export {
+    method ^name($) { 'b2Profile' }
+
     has num32 $.step;
     has num32 $.collide;
     has num32 $.solve;
