@@ -153,11 +153,16 @@ class Box2D::World is repr<CPPStruct> is export {
     #~ /// The minimum is 1.
     #~ float32 GetTreeQuality() const;
 
-    #~ /// Change the global gravity vector.
-    #~ void SetGravity(const b2Vec2& gravity);
+    # /// Change the global gravity vector.
+    # void SetGravity(const b2Vec2& gravity);
+    method SetGravity(Box2D::Vec2 $gravity) {
+        $!m_gravity.x = $gravity.x;
+        $!m_gravity.y = $gravity.y; # ==
+    }
 
-    #~ /// Get the global gravity vector.
-    #~ b2Vec2 GetGravity() const;
+    # /// Get the global gravity vector.
+    # b2Vec2 GetGravity() const;
+    method GetGravity() { $!m_gravity }
 
     #~ /// Is the world locked (in the middle of a time step).
     #~ bool IsLocked() const;
@@ -219,7 +224,7 @@ class Box2D::World is repr<CPPStruct> is export {
     has int32 $.m_bodyCount;
     has int32 $.m_jointCount;
 
-    has Box2D::Vec2 $.m_gravity;
+    HAS Box2D::Vec2 $.m_gravity is rw;
     has int8 $.m_allowSleep;
 
     #~ b2DestructionListener* m_destructionListener;
