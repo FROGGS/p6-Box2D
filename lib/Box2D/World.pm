@@ -156,8 +156,7 @@ class Box2D::World is repr<CPPStruct> is export {
     # /// Change the global gravity vector.
     # void SetGravity(const b2Vec2& gravity);
     method SetGravity(Box2D::Vec2 $gravity) {
-        $!m_gravity.x = $gravity.x;
-        $!m_gravity.y = $gravity.y; # ==
+        $!m_gravity.Set($gravity.x, $gravity.y); # ))
     }
 
     # /// Get the global gravity vector.
