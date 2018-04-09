@@ -18,7 +18,7 @@ class Box2D::World is repr<CPPStruct> is export {
 #~ public:
     #| Construct a world object.
     #| @param gravity the world gravity vector.
-    method new(Box2D::Vec2 $gravity is cpp-ref is cpp-const) is native('Box2D') is nativeconv('thisgnu') { * }
+    #method new(Box2D::Vec2 $gravity is cpp-ref is cpp-const) is native('Box2D') is nativeconv('thisgnu') { * }
 
     #~ /// Register a destruction listener. The listener is owned by you and must
     #~ /// remain in scope.
@@ -26,7 +26,7 @@ class Box2D::World is repr<CPPStruct> is export {
 
     #~ /// Register a contact filter to provide specific control over collision.
     #~ /// Otherwise the default filter is used (b2_defaultFilter). The listener is
-    #~ /// owned by you and must remain in scope. 
+    #~ /// owned by you and must remain in scope.
     #~ void SetContactFilter(b2ContactFilter* filter);
 
     #~ /// Register a contact event listener. The listener is owned by you and must
@@ -223,7 +223,7 @@ class Box2D::World is repr<CPPStruct> is export {
     has int32 $.m_bodyCount;
     has int32 $.m_jointCount;
 
-    HAS Box2D::Vec2 $.m_gravity is rw;
+    HAS Box2D::Vec2 $.m_gravity;
     has int8 $.m_allowSleep;
 
     #~ b2DestructionListener* m_destructionListener;
@@ -243,4 +243,11 @@ class Box2D::World is repr<CPPStruct> is export {
     has int8 $.m_stepComplete;
 
     HAS Box2D::Profile $.m_profile;
+
+    submethod BUILD(
+        :$gravity,
+    ) {
+        use nqp;
+        $!m_gravity := nqp::decont($gravity // Box2D::Vec2.new(0e0, -10e0));
+    }
 }

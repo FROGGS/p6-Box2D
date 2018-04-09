@@ -1,5 +1,4 @@
 use v6;
-unit module Box2D::Vec2;
 use NativeCall;
 
 my constant b2_epsilon = 1.19209290e-07;

@@ -1,11 +1,9 @@
 use v6;
 use NativeCall;
 use Box2D::Vec2;
-#~ use Box2D::Shape;
 
 constant b2_maxPolygonVertices = 8;
 
-#~ class Box2D::PolygonShape is Box2D::Shape is repr<CPPStruct> {
 class Box2D::PolygonShape is repr<CPPStruct> {
     has Pointer $.vmt;
     has uint8 $.m_type;

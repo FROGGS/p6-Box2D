@@ -4,6 +4,9 @@ use Box2D::Body;
 use Box2D::World;
 use Box2D::Shape;
 use Box2D::PolygonShape;
+use Box2D::Filter;
+use Box2D::Fixture;
+use Box2D::ClipVertex;
 
 #sub EXPORT { %(
 #    Box2D::Vec2::EXPORT::DEFAULT::,
