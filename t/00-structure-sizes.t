@@ -6,7 +6,7 @@ use Test;
 use Box2D;
 use Box2D::Mat22;
 
-plan 20;
+plan 25;
 
 compile_cpp_test_lib('00-structure-sizes');
 
@@ -17,16 +17,16 @@ for Box2D::AABB,
     Box2D::BodyDef,
     Box2D::BroadPhase,
     #~ Box2D::Chunk,
-    #~ Box2D::ClipVertex,
-    #~ Box2D::ContactFeature,
-    #~ Box2D::ContactID,
+    Box2D::ClipVertex,
+    Box2D::ContactFeature,
+    Box2D::ContactID,
     #~ Box2D::ContactListener,
     Box2D::ContactManager,
     #~ Box2D::ContactRegister,
     #~ Box2D::DistanceProxy,
     Box2D::DynamicTree,
-    #~ Box2D::Filter,
-    #~ Box2D::Fixture,
+    Box2D::Filter,
+    Box2D::Fixture,
     #~ Box2D::Island,
     #~ Box2D::ManifoldPoint,
     Box2D::Mat22,
