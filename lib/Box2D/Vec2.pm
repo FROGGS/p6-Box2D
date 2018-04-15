@@ -75,25 +75,3 @@ class Box2D::Vec2 is repr<CStruct> is export {
 #~ {
     #~ return (&x)[i];
 #~ }
-
-#| Add a vector to this vector.
-multi infix:<+>(Box2D::Vec2 \a, Box2D::Vec2 \b) is export {
-    Box2D::Vec2.new: a.x + b.x, a.y + b.y # ++
-}
-
-#| Subtract a vector from this vector.
-multi infix:<->(Box2D::Vec2 \a, Box2D::Vec2 \b) is export {
-    Box2D::Vec2.new: a.x - b.x, a.y - b.y # --
-}
-
-#| Multiply this vector by a scalar.
-multi infix:<*>(Box2D::Vec2 \a, \b) is export {
-    Box2D::Vec2.new: a.x * b, a.y * b # **
-}
-multi infix:<*>(\a, Box2D::Vec2 \b) is export {
-    Box2D::Vec2.new: a * b.x, a * b.y # ##
-}
-
-multi infix:<==>(Box2D::Vec2 \a, Box2D::Vec2 \b) is export {
-    a.x == b.x && a.y == b.y # ==
-}

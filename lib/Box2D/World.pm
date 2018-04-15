@@ -9,6 +9,14 @@ use Box2D::Body;
 use Box2D::ContactManager;
 use Box2D::Profile;
 
+class Box2D::BodyPtr is repr<CPointer> is export {
+    method ^name($) { 'b2Body' }
+}
+
+class Box2D::BodyDefPtr is repr<CPointer> is export {
+    method ^name($) { 'b2BodyDef' }
+}
+
 #| The world class manages all physics entities, dynamic simulation,
 #| and asynchronous queries. The world also contains efficient memory
 #| management facilities.
@@ -18,7 +26,7 @@ class Box2D::World is repr<CPPStruct> is export {
 #~ public:
     #| Construct a world object.
     #| @param gravity the world gravity vector.
-    #method new(Box2D::Vec2 $gravity is cpp-ref is cpp-const) is native('Box2D') is nativeconv('thisgnu') { * }
+    method new(Box2D::Vec2 $gravity is cpp-ref is cpp-const) is native('Box2D') is nativeconv('thisgnu') { * }
 
     #~ /// Register a destruction listener. The listener is owned by you and must
     #~ /// remain in scope.
@@ -42,7 +50,12 @@ class Box2D::World is repr<CPPStruct> is export {
     #~ /// is retained.
     #~ /// @warning This function is locked during callbacks.
     #~ b2Body* CreateBody(const b2BodyDef* def);
-    method CreateBody(Box2D::BodyDef is rw is cpp-const) returns Box2D::Body is native<Box2D> is nativeconv('thisgnu') { * }
+    method !CreateBody(Box2D::BodyDef is rw is cpp-const) returns Box2D::Body is native<Box2D> { * }
+    method CreateBody(Box2D::BodyDef $bodyDef) {
+        my $body = self!CreateBody($bodyDef);
+        $body.m_islandIndex = 0;
+        $body
+    }
 
     #~ /// Destroy a rigid body given a definition. No reference to the definition
     #~ /// is retained. This function is locked during callbacks.
@@ -59,14 +72,15 @@ class Box2D::World is repr<CPPStruct> is export {
     #~ /// @warning This function is locked during callbacks.
     #~ void DestroyJoint(b2Joint* joint);
 
-    #~ /// Take a time step. This performs collision detection, integration,
-    #~ /// and constraint solution.
-    #~ /// @param timeStep the amount of time to simulate, this should not vary.
-    #~ /// @param velocityIterations for the velocity constraint solver.
-    #~ /// @param positionIterations for the position constraint solver.
-    #~ void Step(	float32 timeStep,
-                #~ int32 velocityIterations,
-                #~ int32 positionIterations);
+    #| Take a time step. This performs collision detection, integration,
+    #| and constraint solution.
+    #| @param timeStep the amount of time to simulate, this should not vary.
+    #| @param velocityIterations for the velocity constraint solver.
+    #| @param positionIterations for the position constraint solver.
+    #| void Step(float32 timeStep,
+    #|           int32 velocityIterations,
+    #|           int32 positionIterations);
+    method Step(num32, int32, int32) is native<Box2D> { * }
 
     #~ /// Manually clear the force buffer on all bodies. By default, forces are cleared automatically
     #~ /// after each call to Step. The default behavior is modified by calling SetAutoClearForces.
@@ -77,9 +91,9 @@ class Box2D::World is repr<CPPStruct> is export {
     #~ /// @see SetAutoClearForces
     #~ void ClearForces();
 
-    #~ /// Call this to draw shapes and other debug draw data. This is intentionally non-const.
-    #~ void DrawDebugData();
-    method draw-debug-data() is symbol<b2World::DrawDebugData> is native<Box2D> { * }
+    #| Call this to draw shapes and other debug draw data. This is intentionally non-const.
+    #| void DrawDebugData();
+    method DrawDebugData() is native<Box2D> { * }
 
     #~ /// Query the world for all fixtures that potentially overlap the
     #~ /// provided AABB.
@@ -185,7 +199,7 @@ class Box2D::World is repr<CPPStruct> is export {
 
     #~ /// Dump the world into the log file.
     #~ /// @warning this should be called outside of a time step.
-    method dump() is symbol<b2World::Dump> is native<Box2D> { * }
+    method Dump() is native<Box2D> { * }
 
 #~ private:
 
@@ -216,7 +230,7 @@ class Box2D::World is repr<CPPStruct> is export {
     HAS Box2D::ContactManager $.m_contactManager;
 
     #~ b2Body* m_bodyList;
-    has CArray[Box2D::Body] $.m_bodyList;
+    has Pointer $.m_bodyList is rw;
     #~ b2Joint* m_jointList;
     has Pointer $.m_jointList;
 
@@ -244,10 +258,8 @@ class Box2D::World is repr<CPPStruct> is export {
 
     HAS Box2D::Profile $.m_profile;
 
-    submethod BUILD(
-        :$gravity,
-    ) {
-        use nqp;
-        $!m_gravity := nqp::decont($gravity // Box2D::Vec2.new(0e0, -10e0));
+    submethod BUILD() {
+        #$!m_bodyList := CArray[Pointer].new;
+        #$!m_bodyList := Pointer.new(0);
     }
 }

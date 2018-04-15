@@ -6,8 +6,10 @@ use Box2D::Transform;
 use Box2D::Fixture;
 use Box2D::Shape;
 use Box2D::PolygonShape;
+#use Box2D::World;
+use nqp;
 
-enum b2BodyType <staticBody kinematicBody dynamicBody>;
+enum Box2D::BodyType is export <staticBody kinematicBody dynamicBody>;
 
 class Box2D::BodyDef is repr<CStruct> is export {
     method ^name($) { 'b2BodyDef' }
@@ -18,13 +20,17 @@ class Box2D::BodyDef is repr<CStruct> is export {
 
     #| The world position of the body. Avoid creating bodies at the origin
     #| since this can lead to many overlapping shapes.
-    HAS Box2D::Vec2 $.position;
+    #HAS Box2D::Vec2 $.position;
+    has num32 $.position_x is rw;
+    has num32 $.position_y is rw;
 
     #| The world angle of the body in radians.
     has num32 $.angle is rw;
 
     #| The linear velocity of the body's origin in world co-ordinates.
-    HAS Box2D::Vec2 $.linearVelocity;
+    #HAS Box2D::Vec2 $.linearVelocity;
+    has num32 $.linearVelocity_x is rw;
+    has num32 $.linearVelocity_y is rw;
 
     #| The angular velocity of the body.
     has num32 $.angularVelocity is rw;
@@ -67,9 +73,7 @@ class Box2D::BodyDef is repr<CStruct> is export {
     #| This constructor sets the body definition default values.
     submethod BUILD(
         :$type,
-        :$position,
         :$angle,
-        :$linearVelocity,
         :$angularVelocity,
         :$linearDamping,
         :$angularDamping,
@@ -81,9 +85,9 @@ class Box2D::BodyDef is repr<CStruct> is export {
         :$gravityScale
     ) {
         $!type             = $type            // staticBody;
-        $!position        := $position        // Box2D::Vec2.new(0e0, 0e0);
+        #$!position        := Box2D::Vec2.new(0e0, 0e0);
         $!angle            = $angle           // 0e0;
-        $!linearVelocity  := $linearVelocity  // Box2D::Vec2.new(0e0, 0e0);
+        #$!linearVelocity  := Box2D::Vec2.new(0e0, 0e0);
         $!angularVelocity  = $angularVelocity // 0e0;
         $!linearDamping    = $linearDamping   // 0e0;
         $!angularDamping   = $angularDamping  // 0e0;
@@ -96,19 +100,36 @@ class Box2D::BodyDef is repr<CStruct> is export {
     }
 };
 
+class Box2D::FixturePtr is repr<CPointer> is export {
+    method ^name($) { 'b2Fixture' }
+}
+
+class _b2World is repr<CPPStruct> {
+    method ^name($) { 'b2World' }
+    HAS Box2D::BlockAllocator $.m_blockAllocator;
+}
+
 class Box2D::Body is repr<CPPStruct> is export {
     method ^name($) { 'b2Body' }
 
     has uint32 $.m_type;
     has uint16 $.m_flags;
-    has int32  $.m_islandIndex;
-    HAS Box2D::Transform $.m_xf;
-    HAS Box2D::Sweep $.m_sweep;
+    has int32  $.m_islandIndex is rw;
+    HAS Box2D::Transform $.m_xf is rw;
+
+    #HAS Box2D::Sweep $.m_sweep;
+    HAS Box2D::Vec2 $.m_sweep_localCenter;
+    HAS Box2D::Vec2 $.m_sweep_c0;
+    HAS Box2D::Vec2 $.m_sweep_c;
+    has num32 $.m_sweep_a0;
+    has num32 $.m_sweep_a;
+    has num32 $.m_sweep_alpha0;
+
     HAS Box2D::Vec2 $.m_linearVelocity;
     has num32 $.m_angularVelocity;
     HAS Box2D::Vec2 $.m_force;
     has num32 $.m_torque;
-    has Pointer $.m_world;
+    has _b2World $.m_world;
     has Box2D::Body $.m_prev;
     has Box2D::Body $.m_next;
     has Pointer $.m_fixtureList;
@@ -144,10 +165,28 @@ class Box2D::Body is repr<CPPStruct> is export {
 #	/// @param density the shape density (set to zero for static bodies).
 #	/// @warning This function is locked during callbacks.
 #	b2Fixture* CreateFixture(const b2Shape* shape, float32 density);
-    method !CreateFixture(Box2D::Shape $shape is cpp-const is rw, num32 $density) returns Box2D::Fixture is native<Box2D> { * }
-    method CreateFixture(Box2D::PolygonShape $shape, $density) {
-        self!CreateFixture($shape, $density.Num);
+    method !CreateFixture-b2Shape-float32(Box2D::Shape $shape is cpp-const is rw, num32 $density) returns Box2D::FixturePtr is native<Box2D> is symbol<b2Body::CreateFixture> { * }
+    method !CreateFixture-b2FixtureDef(Box2D::FixtureDef $def is cpp-const is rw) returns Box2D::FixturePtr is native<Box2D> is symbol<b2Body::CreateFixture> { * }
+
+    method CreateFixture($a, $density?) {
+        if $a ~~ Box2D::PolygonShape {
+            my $shape = $a.Clone($!m_world.m_blockAllocator);
+            self!CreateFixture-b2Shape-float32($shape, $density.Num);
+        }
+        elsif $a ~~ Box2D::FixtureDef {
+            self!CreateFixture-b2FixtureDef($a);
+        }
     }
+
+#b2Fixture* b2Body::CreateFixture(const b2Shape* shape, float32 density)
+#{
+#	b2FixtureDef def;
+#	def.shape = shape;
+#	def.density = density;
+#
+#	return CreateFixture(&def);
+#}
+
 
 #	/// Destroy a fixture. This removes the fixture from the broad-phase and
 #	/// destroys all contacts associated with this fixture. This will
@@ -172,11 +211,14 @@ class Box2D::Body is repr<CPPStruct> is export {
 #	/// Get the world body origin position.
 #	/// @return the world position of the body's origin.
 #	const b2Vec2& GetPosition() const;
-#
+    method GetPosition() { $!m_xf.p }
+
 #	/// Get the angle in radians.
 #	/// @return the current world rotation angle in radians.
 #	float32 GetAngle() const;
-#
+    #method GetAngle() { say $!m_sweep; $!m_sweep && $!m_sweep.a }
+    method GetAngle() {  $!m_sweep_a }
+
 #	/// Get the world position of the center of mass.
 #	const b2Vec2& GetWorldCenter() const;
 #
@@ -384,9 +426,15 @@ class Box2D::Body is repr<CPPStruct> is export {
 #	/// Get the parent world of this body.
 #	b2World* GetWorld();
 #	const b2World* GetWorld() const;
-#
-#	/// Dump this body to a log file
-#	void Dump();
+
+    #| Dump this body to a log file
+    #|void Dump();
+    method Dump() is native<Box2D> { * }
+
+    method new() {
+        say 'XXX';
+        $!m_islandIndex = 0;
+    }
 }
 
    #~ 0 | class b2Body
